@@ -8,6 +8,5 @@
         Title="MainWindow" Height="550" Width="550">
     <DockPanel>
         <Image Name="Img" HorizontalAlignment="Center" VerticalAlignment="Center" Width="auto" Height="auto"/>
-        
     </DockPanel>
 </Window>

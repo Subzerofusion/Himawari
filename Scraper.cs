@@ -48,46 +48,17 @@ namespace Himawari {
         private static byte[] NO_IMAGE_HASH = new SHA1Managed().ComputeHash(Resource.no_image_png);
         private static int TILE_WIDTH = 550;
         private static int TILE_HEIGHT = 550;
-
-        int concurrentDownloads;
-        public Scraper(int concurrentDownloads) {
-            this.concurrentDownloads = concurrentDownloads;
-        }
-
-
-        /*public static async Task<Bitmap> Compose(Dictionary<Bitmap, Color> layers) {
-            var first = layers.Keys.GetEnumerator().Current.Size;
-            if (layers.Keys.All((x) => { return x.Size == first; })) return null;
-            int width = first.Width;
-            int height = first.Height;
-            var rect = new Rectangle(0, 0, width, height);
-
-            Bitmap canvas = new Bitmap(first.Width, first.Height, PixelFormat.Format32bppArgb);
-            BitmapData canvasData = canvas.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-
-            unsafe {
-                void* canvasPtr = canvasData.Scan0.ToPointer();
-
-                foreach (var layer in layers) {
-                    BitmapData data = layer.Key.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-                    void* ptr = data.Scan0.ToPointer();
-
-                    layer.Key.UnlockBits(data);
-                }
-            }
-        }*/
-
         public static async Task<Bitmap> GetRegion(WaveLength waveLength, int zoom, DateTime time, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1) {
-            return await GetRegion(waveLength, zoom, time, xStart, xEnd, yStart, yEnd);
+            return await GetRegion(zoom, time, waveLength, xStart, xEnd, yStart, yEnd);
         }
 
         public static async Task<Bitmap> GetRegion(int zoom, DateTime time, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1) {
-            return await GetRegion(null, zoom, time, xStart, xEnd, yStart, yEnd);
+            return await GetRegion(zoom, time, null, xStart, xEnd, yStart, yEnd);
         }
 
-        private static async Task<Bitmap> GetRegion(WaveLength? waveLength, int zoom, DateTime time, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1) {
-            if (!(waveLength == null ? ACCEPTABLE_COLOUR_ZOOMS : ACCEPTABLE_WIDEBAND_ZOOMS).Contains(zoom)) throw new Exception();
+        private static async Task<Bitmap> GetRegion(int zoom, DateTime time, WaveLength? waveLength, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1) {
+            if (!(waveLength == null ? ACCEPTABLE_COLOUR_ZOOMS : ACCEPTABLE_WIDEBAND_ZOOMS).Contains(zoom))
+                throw new Exception();
 
             xStart = xStart == -1 ? 0 : xStart;
             yStart = yStart == -1 ? 0 : yStart;
@@ -160,6 +131,12 @@ namespace Himawari {
             if (image.Length != NO_IMAGE_SIZE) return true;
             if (new SHA1Managed().ComputeHash(image).SequenceEqual(NO_IMAGE_HASH)) return false;
             return true;
+        }
+
+        public async static Task<DateTime> GetMostRecent() {
+            DateTime now = DateTime.Now;
+            while (await GetTile(WaveLength.Blue047, 1, now, 0, 0) == null) now = DecrementTime(now);
+            return now;
         }
 
         public async static Task<byte[]> GetTile(WaveLength waveLength, int zoom, DateTime time, int x, int y) {
