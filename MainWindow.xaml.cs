@@ -20,6 +20,9 @@ using Color = System.Drawing.Color;
 using static Himawari.BitmapExtensions;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using static Himawari.ColorExtensions;
+using System.Windows.Forms;
+using Point = System.Drawing.Point;
+using System.Collections.ObjectModel;
 
 namespace Himawari {
     /// <summary>
@@ -98,8 +101,46 @@ namespace Himawari {
             }).Start();
         }
 
+        public void ComposeWallPaper(Bitmap earth = null) {
+            var screens = Wallpaper.GetScreens();
+            var space = Wallpaper.CalculateRectangle(screens);
+            earth = earth ?? new Bitmap(GetTempPath("test.png"));
+            Bitmap wallpaper = new Bitmap(space.Width, space.Height, PixelFormat.Format32bppArgb);
+            wallpaper.Fill(Color.Black);
+            foreach (Screen screen in screens) {
+                Point earthPos = new Point(1920 - screen.Bounds.Left, -1700 - screen.Bounds.Top);
+                Point earthCentre = new Point(earth.Width / 2, 0);
+                Point earthSize = new Point(earth.Width, earth.Height);
+
+                using (Bitmap slice = Wallpaper.GetSlice(screen, earth, earthPos, earthCentre, earthSize)) {
+                    wallpaper = Wallpaper.AddSlice(wallpaper, space, screen, slice);
+                }
+            }
+            // wallpaper.Save(GetTempPath($"{time:yyMMdd_HHmmss}.png"));
+
+            Wallpaper.Set(wallpaper, Wallpaper.Style.Span);
+            wallpaper.Dispose();
+        }
+
+        public void FullChain(DateTime time, int zoom) {
+            new Task(async () => {
+                Bitmap earth = await Scraper.ComposeDisk(time, zoom, yStart: zoom / 2, progress: (str) => { ThreadSafeLog(str); });
+                Dispatcher.Invoke(() => { ThreadSafeLog("Scraping Done"); });
+                ComposeWallPaper(earth);
+                Dispatcher.Invoke(() => { ThreadSafeLog("Done"); });
+                earth.Dispose();
+            }).Start();
+        }
+
+       public ObservableCollection<string> Log { get; set; } = new ObservableCollection<string>();
+
+        public void ThreadSafeLog(string text) {
+            Dispatcher.Invoke(() => { Log.Insert(0, text); });
+        }
+
         public MainWindow() {
             InitializeComponent();
+            DataContext = this;
 
             if (!Directory.Exists(TEMP)) Directory.CreateDirectory(TEMP);
             if (!Directory.Exists(CURR)) Directory.CreateDirectory(CURR);
@@ -108,7 +149,15 @@ namespace Himawari {
             int zoom = 10;
 
             // ScrapeRegionTest(time, zoom, "_rgb");
-            ComposeDiskTest(time, zoom, "_cmd");
+            // ComposeDiskTest(time, zoom, "_cmd");
+
+            // ComposeWallPaper(time);
+            new Task(async () => {
+                DateTime t = await Scraper.GetMostRecentTime();
+                ThreadSafeLog($"most recent data is from {t:yyMMdd_HHmmss}");
+                FullChain(t, zoom);
+            }
+            ).Start();
         }
 
         private string GetTempPath(string name) {

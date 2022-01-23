@@ -13,15 +13,14 @@ using static Himawari.ColorExtensions;
 
 namespace Himawari {
 
-
     public static class NumericalExtensions {
 
         public static float Loop(this float f, float min, float max) {
             float diff = max - min; // overall range
             f -= min; //sets it to distance from min;
-            f %= diff;
-            f = f < 0 ? f + diff : f;
-            f += min;
+            f %= diff; //loops
+            f = f < 0 ? f + diff : f; // covers when it's negative
+            f += min; // return to original value range
             return f;
         }
 
@@ -133,17 +132,16 @@ namespace Himawari {
                     );
             }
         };
-        public static Bitmap Fill(this Bitmap bitmap, Color color ) {
+        public static Bitmap Fill(this Bitmap bitmap, Color color) {
             using (Graphics gfx = Graphics.FromImage(bitmap))
             using (SolidBrush brush = new SolidBrush(color))
                 gfx.FillRectangle(brush, 0, 0, bitmap.Width, bitmap.Height);
             return bitmap;
         }
 
-        public static async Task<Bitmap> Blend<T>(this Bitmap baseImage, Filter<T> filter, T filterParam ) {
+        public static async Task<Bitmap> Blend<T>(this Bitmap baseImage, Filter<T> filter, T filterParam) {
             Task<Bitmap> task = new Task<Bitmap>(() => {
-                BitmapData baseImageData = baseImage.LockBits(new Rectangle(0, 0, baseImage.Width, baseImage.Height),
-              ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                BitmapData baseImageData = baseImage.LockBits(new Rectangle(0, 0, baseImage.Width, baseImage.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
                 byte[] baseImageBuffer = new byte[baseImageData.Stride * baseImageData.Height];
 
                 Marshal.Copy(baseImageData.Scan0, baseImageBuffer, 0, baseImageBuffer.Length);
@@ -208,5 +206,4 @@ namespace Himawari {
             return result;
         }
     }
-
 }
