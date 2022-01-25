@@ -17,10 +17,12 @@ using System.Windows.Media;
 using System.IO;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using Color = System.Drawing.Color;
+using Screen = System.Windows.Forms.Screen;
 using static Himawari.BitmapExtensions;
 
 namespace Himawari {
     public enum WaveLength {
+        RGB = 0,
         Blue047 = 1,
         Green051 = 2,
         Red064 = 3,
@@ -55,7 +57,6 @@ namespace Himawari {
         public static async Task<Bitmap> ComposeDisk(DateTime time, int zoom, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1, ProgressCallback progress = null) {
             List<Task<Bitmap>> tasks = new List<Task<Bitmap>>();
             List<Task> tasks2 = new List<Task>();
-
 
             // get layers
             tasks.Add(GetRegion(WaveLength.Blue047, zoom, time, xStart, xEnd, yStart, yEnd, progress: progress));
@@ -120,6 +121,7 @@ namespace Himawari {
         }
 
         public static async Task<Bitmap> GetRegion(WaveLength waveLength, int zoom, DateTime time, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1, ProgressCallback progress = null) {
+            if(waveLength == WaveLength.RGB) return await GetRegion(zoom, time, xStart, xEnd, yStart, yEnd, progress);
             return await GetRegion(zoom, time, waveLength, xStart, xEnd, yStart, yEnd, progress);
         }
 
@@ -128,7 +130,7 @@ namespace Himawari {
         }
 
         private static async Task<Bitmap> GetRegion(int zoom, DateTime time, WaveLength? waveLength, int xStart = -1, int xEnd = -1, int yStart = -1, int yEnd = -1, ProgressCallback progress = null) {
-            if (!(waveLength == null ? ACCEPTABLE_COLOUR_ZOOMS : ACCEPTABLE_WIDEBAND_ZOOMS).Contains(zoom))
+            if (!(waveLength == null || waveLength == WaveLength.RGB ? ACCEPTABLE_COLOUR_ZOOMS : ACCEPTABLE_WIDEBAND_ZOOMS).Contains(zoom))
                 throw new Exception();
 
             xStart = xStart == -1 ? 0 : xStart;
@@ -146,8 +148,11 @@ namespace Himawari {
                 List<Task> tasks = new List<Task>();
                 bool first = true;
 
+                int totalTasks = 0;
+                int completedTasks = 1;
+
                 Action reportProgress = () => {
-                    progress?.Invoke($"{(waveLength == null ? "rgb" : waveLength.ToString())} tile({tasks.Where(t => t.IsCompleted).ToArray().Length + 1}/{tasks.Count}) retrieved");
+                    progress?.Invoke($"{(waveLength == null ? "rgb" : waveLength.ToString())} tile({completedTasks}/{totalTasks}) retrieved");
                 };
 
                 for (int i = 0; i < xEnd - xStart; i++) {
@@ -155,7 +160,7 @@ namespace Himawari {
                         var x = i;
                         var y = j;
 
-                        Task<byte[]> getTile = waveLength == null ?
+                        Task<byte[]> getTile = waveLength == null || waveLength == WaveLength.RGB?
                                 GetTile(zoom, time, x + xStart, y + yStart) :
                                 GetTile((WaveLength)waveLength, zoom, time, x + xStart, y + yStart);
 
@@ -164,18 +169,27 @@ namespace Himawari {
                             byte[] firstPng = await getTile; // wait for the first image
                             if (!HasImage(firstPng)) return null; // the image is bad
                             Task task = new Task(() => { // continue as usual
+                                completedTasks++;
+                                reportProgress();
                                 DrawToGraphics(graphics, graphicsLock, firstPng, x, y);
+                                completedTasks++;
                                 reportProgress();
                             });
                             tasks.Add(task);
+                            totalTasks++;
                             task.Start();
                         } else {
                             tasks.Add(getTile.ContinueWith((task) => {
+                                completedTasks++;
+                                reportProgress();
                                 DrawToGraphics(graphics, graphicsLock, task.Result, x, y);
+                                completedTasks++;
                                 reportProgress();
                             }));
+                            totalTasks++;
                         }
                         tasks.Add(getTile);
+                        totalTasks++;
                     }
                 }
                 await Task.WhenAll(tasks);

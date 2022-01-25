@@ -10,6 +10,8 @@ using System.Runtime.InteropServices;
 using System.IO;
 using Microsoft.Win32;
 
+using Screen = System.Windows.Forms.Screen;
+
 namespace Himawari {
     class Wallpaper {
         public static Screen[] GetScreens() {

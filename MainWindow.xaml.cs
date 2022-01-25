@@ -54,61 +54,72 @@ namespace Himawari {
             }).Start();
         }
 
-        public void ComposeDiskTest(DateTime time, int zoom, string suffix) {
-            new Task(async () => {
-                List<Task<Bitmap>> tasks = new List<Task<Bitmap>>();
+        public async Task ComposeDiskTest(DateTime time, int zoom, string suffix) {
+            List<Task<Bitmap>> tasks = new List<Task<Bitmap>>();
 
-                tasks.Add(Scraper.GetRegion(WaveLength.Blue047, zoom, time, yStart: zoom / 2));
-                tasks.Add(Scraper.GetRegion(WaveLength.Green051, zoom, time, yStart: zoom / 2));
-                tasks.Add(Scraper.GetRegion(WaveLength.Red064, zoom, time, yStart: zoom / 2));
-                tasks.Add(Scraper.GetRegion(WaveLength.FarIR133, zoom, time, yStart: zoom / 2));
-                //tasks.Add(Scraper.GetRegion(zoom, time));
+            tasks.Add(Scraper.GetRegion(WaveLength.Blue047, zoom, time, yStart: zoom / 2));
+            tasks.Add(Scraper.GetRegion(WaveLength.Green051, zoom, time, yStart: zoom / 2));
+            tasks.Add(Scraper.GetRegion(WaveLength.Red064, zoom, time, yStart: zoom / 2));
+            tasks.Add(Scraper.GetRegion(WaveLength.FarIR133, zoom, time, yStart: zoom / 2));
+            //tasks.Add(Scraper.GetRegion(zoom, time));
 
-                await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
 
-                List<Bitmap> images = tasks.Select(x => x.Result).ToList();
-                tasks.Clear();
+            List<Bitmap> images = tasks.Select(x => x.Result).ToList();
+            tasks.Clear();
 
-                tasks.Add(images[0].Blend(Filters.And, Color.FromArgb(0xff, 0x00, 0x00, 0xff)));
-                tasks.Add(images[1].Blend(Filters.And, Color.FromArgb(0xff, 0x00, 0xff, 0x00)));
-                tasks.Add(images[2].Blend(Filters.And, Color.FromArgb(0xff, 0xff, 0x00, 0x00)));
-                tasks.Add(images[3].Blend(Filters.Multiply, Color.FromArgb(0xff, 0x22, 0x22, 0x22)));
+            tasks.Add(images[0].Blend(Filters.And, Color.FromArgb(0xff, 0x00, 0x00, 0xff)));
+            tasks.Add(images[1].Blend(Filters.And, Color.FromArgb(0xff, 0x00, 0xff, 0x00)));
+            tasks.Add(images[2].Blend(Filters.And, Color.FromArgb(0xff, 0xff, 0x00, 0x00)));
+            tasks.Add(images[3].Blend(Filters.Multiply, Color.FromArgb(0xff, 0x22, 0x22, 0x22)));
 
-                await Task.WhenAll(tasks);
-                tasks.Clear();
+            await Task.WhenAll(tasks);
+            tasks.Clear();
 
-                Bitmap canvas = new Bitmap(images[0].Width, images[0].Height, PixelFormat.Format32bppArgb);
-                canvas.Fill(Color.Black);
+            Bitmap canvas = new Bitmap(images[0].Width, images[0].Height, PixelFormat.Format32bppArgb);
+            canvas.Fill(Color.Black);
 
-                await canvas.Blend(images[0], Filters.Add);
-                await canvas.Blend(images[1], Filters.Add);
-                await canvas.Blend(images[2], Filters.Add);
+            await canvas.Blend(images[0], Filters.Add);
+            await canvas.Blend(images[1], Filters.Add);
+            await canvas.Blend(images[2], Filters.Add);
 
-                await canvas.Blend(Filters.ClampedMultiply, 1.5f);
+            await canvas.Blend(Filters.ClampedMultiply, 1.5f);
 
-                Bitmap clouds = new Bitmap(images[0].Width, images[0].Height, PixelFormat.Format32bppArgb);
-                clouds.Fill(Color.Black);
-                await clouds.Blend(images[3], Filters.Add);
+            Bitmap clouds = new Bitmap(images[0].Width, images[0].Height, PixelFormat.Format32bppArgb);
+            clouds.Fill(Color.Black);
+            await clouds.Blend(images[3], Filters.Add);
 
-                await canvas.Blend(clouds, Filters.Lighter);
+            await canvas.Blend(clouds, Filters.Lighter);
 
-                canvas.Save(Path.Combine(TEMP, $"{time:yyMMdd_HHmmss}{suffix}.png"));
-                canvas.Dispose();
-                clouds.Dispose();
+            canvas.Save(Path.Combine(TEMP, $"{time:yyMMdd_HHmmss}{suffix}.png"));
+            canvas.Dispose();
+            clouds.Dispose();
 
-                foreach (var image in images) image.Dispose();
-
-            }).Start();
+            foreach (var image in images) image.Dispose();
         }
 
         public void ComposeWallPaper(Bitmap earth = null) {
             var screens = Wallpaper.GetScreens();
+
+            // I know there are 4 screens, so I can do this
+            // offset points are not cumulative
+            // offsets compensate for bezels
+            var offsets = new Dictionary<Screen, Point>() {
+                { screens[0], new Point(-64, 0) },
+                { screens[1], new Point(-18, 0) },
+                { screens[2], new Point(64, 0) },
+                { screens[3], new Point(18, 0) },
+            };
+
             var space = Wallpaper.CalculateRectangle(screens);
             earth = earth ?? new Bitmap(GetTempPath("test.png"));
             Bitmap wallpaper = new Bitmap(space.Width, space.Height, PixelFormat.Format32bppArgb);
             wallpaper.Fill(Color.Black);
             foreach (Screen screen in screens) {
-                Point earthPos = new Point(1920 - screen.Bounds.Left, -1700 - screen.Bounds.Top);
+                // earthPos is the centre of the planet
+                // hard coded 1920 means middle of the two middle screens
+                // hard coded -1700 places bottom of earth just above middle task bars
+                Point earthPos = new Point(-screen.Bounds.Left + 1920 + offsets[screen].X, -screen.Bounds.Top - 850 + offsets[screen].Y);
                 Point earthCentre = new Point(earth.Width / 2, 0);
                 Point earthSize = new Point(earth.Width, earth.Height);
 
@@ -151,10 +162,11 @@ namespace Himawari {
             // ScrapeRegionTest(time, zoom, "_rgb");
             // ComposeDiskTest(time, zoom, "_cmd");
 
-            // ComposeWallPaper(time);
+            //ComposeWallPaper();
+
             new Task(async () => {
                 DateTime t = await Scraper.GetMostRecentTime();
-                ThreadSafeLog($"most recent data is from {t:yyMMdd_HHmmss}");
+                // ThreadSafeLog($"most recent data is from {t:yyMMdd_HHmmss}");
                 FullChain(t, zoom);
             }
             ).Start();

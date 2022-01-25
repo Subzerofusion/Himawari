@@ -63,6 +63,46 @@ namespace Himawari {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap baseline_public_off_white_48dp {
+            get {
+                object obj = ResourceManager.GetObject("baseline_public_off_white_48dp", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon baseline_public_off_white_ico {
+            get {
+                object obj = ResourceManager.GetObject("baseline_public_off_white_ico", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap baseline_public_white_48dp {
+            get {
+                object obj = ResourceManager.GetObject("baseline_public_white_48dp", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon baseline_public_white_ico {
+            get {
+                object obj = ResourceManager.GetObject("baseline_public_white_ico", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap no_image {
             get {
                 object obj = ResourceManager.GetObject("no_image", resourceCulture);
@@ -77,6 +117,46 @@ namespace Himawari {
             get {
                 object obj = ResourceManager.GetObject("no_image_png", resourceCulture);
                 return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap twotone_public_off_white_48dp {
+            get {
+                object obj = ResourceManager.GetObject("twotone_public_off_white_48dp", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon twotone_public_off_white_ico {
+            get {
+                object obj = ResourceManager.GetObject("twotone_public_off_white_ico", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap twotone_public_white_48dp {
+            get {
+                object obj = ResourceManager.GetObject("twotone_public_white_48dp", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon twotone_public_white_ico {
+            get {
+                object obj = ResourceManager.GetObject("twotone_public_white_ico", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
             }
         }
     }

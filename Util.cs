@@ -1,17 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using System.Xml;
 using System.Xml.Serialization;
 using static Himawari.ColorExtensions;
 
 namespace Himawari {
+    public class ObservableProperty<T> : INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private T _value;
+        public T Value {
+            get { return _value; }
+            set {
+                if (!value.Equals(_value)) {
+                    _value = value;
+                    UpdatePropertyValue();
+                }
+            }
+        }
+
+        public ObservableProperty(T value = default) {
+            this._value = value;
+        }
+
+        public void UpdatePropertyValue([CallerMemberName] string propertyName = null) {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    public class DelegateCommand : ICommand {
+        public Action CommandAction { get; set; }
+        public Func<bool> CanExecuteFunc { get; set; }
+
+        public void Execute(object parameter) {
+            CommandAction();
+        }
+
+        public bool CanExecute(object parameter) {
+            return CanExecuteFunc == null || CanExecuteFunc();
+        }
+
+        public event EventHandler CanExecuteChanged {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
+    }
 
     public static class NumericalExtensions {
 
