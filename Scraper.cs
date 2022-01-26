@@ -42,15 +42,16 @@ namespace Himawari {
     }
 
     public class Scraper {
-        private static int[] ACCEPTABLE_WIDEBAND_ZOOMS = new int[] { 1, 2, 4, 8, 10 };
-        private static int[] ACCEPTABLE_COLOUR_ZOOMS = new int[] { 8, 16, 20 };
+        public static int[] ACCEPTABLE_WIDEBAND_ZOOMS { get; private set; } = new int[] { 1, 2, 4, 8, 10 } ;
+        public static int[] ACCEPTABLE_COLOUR_ZOOMS { get; private set; } = new int[] { 8, 16, 20 };
+
+        public static int TILE_WIDTH { get; private set; } = 550;
+        public static int TILE_HEIGHT { get; private set; } = 550;
         private static string WIDEBAND_URL_BASE = "https://himawari8.nict.go.jp/img/FULL_24h";
         private static string COLOUR_URL_BASE = "https://himawari8.nict.go.jp/img/D531106";
         private static HttpClient CLIENT = new HttpClient();
         private static int NO_IMAGE_SIZE = Resource.no_image_png.Length;
         private static byte[] NO_IMAGE_HASH = new SHA1Managed().ComputeHash(Resource.no_image_png);
-        private static int TILE_WIDTH = 550;
-        private static int TILE_HEIGHT = 550;
 
         public delegate void ProgressCallback(string info);
 
